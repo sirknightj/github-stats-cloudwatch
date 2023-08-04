@@ -135,8 +135,8 @@ order:
 | Owner, Repository | Issues Opened        | The number of issues closed within the past _interval_.  |
 | Owner, Repository | Open Issues          | The number of issues currently open.                    |
 | Owner, Repository | Open Pull Requests   | The number of pull requests currently open.             |
-| Owner, Repository | Pull Requests Closed | The number of issues closed within the past _interval_.  |
-| Owner, Repository | Pull Requests Opened | The number of issues closed within the past _interval_. |
+| Owner, Repository | Pull Requests Closed | The number of pull requests closed within the past _interval_.  |
+| Owner, Repository | Pull Requests Opened | The number of pull requests opened within the past _interval_. |
 
 The default interval is 24 hours. You can configure that in the [FetchGitHubStatsOncePerDayApplication](src/main/java/com/sirknightj/application/FetchGithubStatsOncePerDayApplication.java). Note that the application may not behave correctly if the interval is more than 24 hours, so use that at your own risk.
 
