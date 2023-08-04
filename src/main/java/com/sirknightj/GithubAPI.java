@@ -3,16 +3,17 @@ package com.sirknightj;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.sirknightj.utils.DateHelper;
 import com.sirknightj.utils.RepoInfo;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import com.sirknightj.utils.DateHelper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,8 @@ public class GithubAPI {
 
     private final String githubToken;
     private final Gson gson;
+
+    private final long sleepMs;
 
     public GithubAPI() {
         this(null);
@@ -38,33 +41,57 @@ public class GithubAPI {
     public GithubAPI(final String authToken) {
         this.githubToken = authToken;
         this.gson = new Gson();
+
+        if (githubToken == null || githubToken.length() == 0) {
+            // Rate limit to search api is 10 requests per minute, unauthenticated
+            sleepMs = Duration.ofSeconds(6).toMillis();
+        } else {
+            // Rate limit to search api is 30 requests per minute, authenticated
+            sleepMs = Duration.ofSeconds(2).toMillis();
+        }
     }
 
-    public List<RepoInfo> fetchGithubIssuesFrom(final List<Map.Entry<String, String>> reposToFetch, final ZonedDateTime start, final ZonedDateTime end) throws IOException {
+    public List<RepoInfo> fetchGithubIssuesFrom(final List<Map.Entry<String, String>> reposToFetch, final ZonedDateTime start, final ZonedDateTime end) throws IOException, InterruptedException {
         final List<RepoInfo> repoInfo = new ArrayList<>();
         for (final Map.Entry<String, String> repo : reposToFetch) {
             log.info("Working on: {}/{}.", repo.getKey(), repo.getValue());
 
-            final int currentIssuesCount = fetchOpenIssuesCount(repo.getKey(), repo.getValue());
-            log.info("{}/{} - Open pull requests: {}", repo.getKey(), repo.getValue(), currentIssuesCount);
+            try {
+                final int currentIssuesCount = fetchOpenIssuesCount(repo.getKey(), repo.getValue());
+                log.info("{}/{} - Open pull requests: {}", repo.getKey(), repo.getValue(), currentIssuesCount);
 
-            final int currentPullRequestsCount = fetchOpenPullRequestsCount(repo.getKey(), repo.getValue());
-            log.info("{}/{} - Open issues: {}", repo.getKey(), repo.getValue(), currentPullRequestsCount);
+                // Doesn't use search API, so not required.
+                final int currentPullRequestsCount = fetchOpenPullRequestsCount(repo.getKey(), repo.getValue());
+                log.info("{}/{} - Open issues: {}", repo.getKey(), repo.getValue(), currentPullRequestsCount);
 
-            final int issuesOpenedInterval = fetchIssuesOpenedBetween(repo.getKey(), repo.getValue(), start, end);
-            log.info("{}/{} - Issues opened between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, issuesOpenedInterval);
+                Thread.sleep(sleepMs);
 
-            final int issuesClosedInterval = fetchIssuesClosedBetween(repo.getKey(), repo.getValue(), start, end);
-            log.info("{}/{} - Issues closed between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, issuesClosedInterval);
+                final int issuesOpenedInterval = fetchIssuesOpenedBetween(repo.getKey(), repo.getValue(), start, end);
+                log.info("{}/{} - Issues opened between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, issuesOpenedInterval);
 
-            final int pullRequestsOpenedInterval = fetchPullRequestsOpenedBetween(repo.getKey(), repo.getValue(), start, end);
-            log.info("{}/{} - Pull requests opened between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, pullRequestsOpenedInterval);
+                Thread.sleep(sleepMs);
 
-            final int pullRequestsClosedInterval = fetchPullRequestsClosedBetween(repo.getKey(), repo.getValue(), start, end);
-            log.info("{}/{} - Pull requests closed between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, pullRequestsClosedInterval);
+                final int issuesClosedInterval = fetchIssuesClosedBetween(repo.getKey(), repo.getValue(), start, end);
+                log.info("{}/{} - Issues closed between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, issuesClosedInterval);
 
-            repoInfo.add(new RepoInfo(repo.getKey(), repo.getValue(), currentIssuesCount, currentPullRequestsCount,
-                    issuesClosedInterval, issuesOpenedInterval, pullRequestsClosedInterval, pullRequestsOpenedInterval));
+                Thread.sleep(sleepMs);
+
+                final int pullRequestsOpenedInterval = fetchPullRequestsOpenedBetween(repo.getKey(), repo.getValue(), start, end);
+                log.info("{}/{} - Pull requests opened between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, pullRequestsOpenedInterval);
+
+                Thread.sleep(sleepMs);
+
+                final int pullRequestsClosedInterval = fetchPullRequestsClosedBetween(repo.getKey(), repo.getValue(), start, end);
+                log.info("{}/{} - Pull requests closed between {} and {}: {}", repo.getKey(), repo.getValue(), start, end, pullRequestsClosedInterval);
+
+                Thread.sleep(sleepMs);
+
+                repoInfo.add(new RepoInfo(repo.getKey(), repo.getValue(), currentIssuesCount, currentPullRequestsCount,
+                        issuesClosedInterval, issuesOpenedInterval, pullRequestsClosedInterval, pullRequestsOpenedInterval));
+
+            } catch (final Exception ex) {
+                log.error("Encountered error working on: {}/{}.", repo.getKey(), repo.getValue(), ex);
+            }
         }
 
         return repoInfo;
@@ -214,29 +241,32 @@ public class GithubAPI {
         final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         attachAuthHeader(conn);
+        conn.connect();
+        try {
+            final StringBuilder result = new StringBuilder();
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                try (final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+                    for (String line; (line = reader.readLine()) != null; ) {
+                        result.append(line);
+                    }
+                }
 
-        final StringBuilder result = new StringBuilder();
-        if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
-            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()))) {
+                final String response = result.toString();
+                log.error("Error fetching {}. Received HTTP error code {}. Message: {}", url, conn.getResponseCode(), response);
+
+                return new HttpResult(conn.getResponseCode(), response);
+            }
+            // conn.responseCode == HTTP_OK
+
+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
                 for (String line; (line = reader.readLine()) != null; ) {
                     result.append(line);
                 }
             }
-
-            final String response = result.toString();
-            log.error("Error fetching {}. Received HTTP error code {}. Message: {}", url, conn.getResponseCode(), response);
-
-            return new HttpResult(conn.getResponseCode(), response);
+            return new HttpResult(HttpURLConnection.HTTP_OK, result.toString());
+        } finally {
+            conn.disconnect();
         }
-        // conn.responseCode == HTTP_OK
-
-        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
-            for (String line; (line = reader.readLine()) != null; ) {
-                result.append(line);
-            }
-        }
-
-        return new HttpResult(HttpURLConnection.HTTP_OK, result.toString());
     }
 
     private void attachAuthHeader(final HttpURLConnection conn) {
