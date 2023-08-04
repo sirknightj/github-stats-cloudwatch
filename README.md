@@ -6,7 +6,7 @@ This application will fetch stats of a configurable set of GitHub repositories,
 based on a configurable time interval. It will then upload them to Amazon
 CloudWatch.
 
-The full list of fetched stats per repository can be found [below](#Accessing-published-metrics).
+The full list of fetched stats per repository can be found [below](#accessing-published-metrics).
 
 You can then use these metrics to create a CloudWatch Dashboard to monitor the
 health across your GitHub repositories.
