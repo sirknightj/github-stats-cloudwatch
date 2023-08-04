@@ -1,7 +1,7 @@
 package com.sirknightj;
 
-import lombok.extern.log4j.Log4j2;
 import com.sirknightj.application.FetchGithubStatsOncePerDayApplication;
+import lombok.extern.log4j.Log4j2;
 
 import java.time.Duration;
 import java.util.List;

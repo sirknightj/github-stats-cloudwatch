@@ -48,7 +48,7 @@ public class FetchGithubStatsOncePerDayApplication implements AutoCloseable {
                     final ZonedDateTime thisTime = this.lastTime.plus(this.interval);
                     try {
                         final List<RepoInfo> stats = githubAPI.fetchGithubIssuesFrom(reposToFetch, this.lastTime, thisTime.minusSeconds(1));
-                        this.ghSCWP.publish(stats);
+                        this.ghSCWP.publish(stats, thisTime);
                     } catch (final Exception ex) {
                         log.error(ex);
                     }

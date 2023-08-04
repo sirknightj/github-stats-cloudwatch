@@ -12,7 +12,7 @@ import software.amazon.awssdk.services.cloudwatch.model.PutMetricDataRequest;
 import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class GitHubStatsCloudWatchPublisher implements AutoCloseable {
         this.cw.close();
     }
 
-    public void publish(final List<RepoInfo> repoInfo) {
+    public void publish(final List<RepoInfo> repoInfo, final ZonedDateTime metricCollectedTime) {
         log.info("Starting to publish to CloudWatch: {}", repoInfo);
         try {
             final List<MetricDatum> metricDataList = new ArrayList<>();
@@ -46,7 +46,8 @@ public class GitHubStatsCloudWatchPublisher implements AutoCloseable {
                 final int openPRs = repo.getCurrentPullRequestsOpen();
 
                 // Set an Instant object.
-                final String time = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+                final String time = metricCollectedTime.withZoneSameInstant(ZoneId.of("UTC"))
+                        .format(DateTimeFormatter.ISO_INSTANT);
                 final Instant instant = Instant.parse(time);
 
                 final Dimension[] dimensions = {
