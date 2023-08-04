@@ -1,7 +1,7 @@
 package com.sirknightj.utils;
 
 public final class CloudwatchConstants {
-    public static final String customMetricNamespace = "GitHub Stats Test";
+    public static final String customMetricNamespace = "GitHub Stats";
     public static final String openIssuesMetricName = "Open Issues";
     public static final String openedIssuesMetricName = "Issues Opened";
     public static final String closedIssuesMetricName = "Issues Closed";
