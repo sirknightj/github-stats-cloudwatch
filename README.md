@@ -53,8 +53,8 @@ For example:
 
 ```java
 final List<Map.Entry<String, String>> reposToFetch = List.of(
-      Map.entry("facebookresearch","audiocraft"),
-      Map.entry("facebookresearch","llama")
+      Map.entry("facebookresearch", "audiocraft"),
+      Map.entry("facebookresearch", "llama")
 );
 ```
 
@@ -65,10 +65,10 @@ and https://github.com/facebookresearch/llama.
 #### Other configuration options
 
 You will need to update the region
-in [GitHubStatsCloudWatchPublisher.java](src/main/java/com/sirknightj/cloudwatch/GitHubStatsCloudWatchPublisher.java#L37)
+in [GitHubStatsCloudWatchPublisher.java](src/main/java/com/sirknightj/cloudwatch/GitHubStatsCloudWatchPublisher.java#L28)
 to the region you want to upload the stats to.
 Optionally, you can configure the daily offset at which the stats are fetched,
-and the timezone in [Main.java](src/main/java/com/sirknightj/Main.java).
+and the timezone in [Main.java](src/main/java/com/sirknightj/Main.java#L15).
 
 #### Provide AWS Credentials
 
@@ -77,8 +77,7 @@ provider
 chain: https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html
 
 You can provide aws credentials using
-the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions)
-. `aws configure`.
+the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html#getting-started-install-instructions). `aws configure`.
 
 ### Compiling
 
