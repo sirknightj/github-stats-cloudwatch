@@ -46,7 +46,7 @@ git clone https://github.com/sirknightj/github-stats-cloudwatch.git
 
 #### Which GitHub Repositories to fetch
 
-In [Main.java](github-stats-cloudwatch/src/main/java/com/sirknightj/Main.java), update the list of repositories
+In [Main.java](src/main/java/com/sirknightj/Main.java), update the list of repositories
 to pull from. The keys are the repository owner, and the values are the
 repository name.
 For example:
@@ -65,10 +65,10 @@ and https://github.com/facebookresearch/llama.
 #### Other configuration options
 
 You will need to update the region
-in [GitHubStatsCloudWatchPublisher.java](github-stats-cloudwatch/src/main/java/com/sirknightj/cloudwatch/GitHubStatsCloudWatchPublisher.java#L37)
+in [GitHubStatsCloudWatchPublisher.java](src/main/java/com/sirknightj/cloudwatch/GitHubStatsCloudWatchPublisher.java#L37)
 to the region you want to upload the stats to.
 Optionally, you can configure the daily offset at which the stats are fetched,
-and the timezone in [Main.java](github-stats-cloudwatch/src/main/java/com/sirknightj/Main.java).
+and the timezone in [Main.java](src/main/java/com/sirknightj/Main.java).
 
 #### Provide AWS Credentials
 
